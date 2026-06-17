@@ -1,4 +1,1 @@
 mcp
-httpx
-python-dotenv
-PyGithub

@@ -4,8 +4,6 @@ from mcp.client.session import ClientSession
 from mcp.client.stdio import stdio_client, StdioServerParameters
 
 async def iniciar_cliente():
-    # 1. Configurar los parámetros del servidor
-    # Definimos el comando y los argumentos para ejecutar el servidor MCP local.
     server_parameters = StdioServerParameters(
         command=sys.executable,
         args=["server.py"]
@@ -13,52 +11,53 @@ async def iniciar_cliente():
 
     print("Conectando al servidor MCP...")
 
-    # 2. Iniciar el transporte stdio usando un gestor de contexto asíncrono
     async with stdio_client(server_parameters) as (read_stream, write_stream):
-        
-        # 3. Crear la sesión del cliente con los streams de lectura y escritura
         async with ClientSession(read_stream, write_stream) as session:
-            
-            # 4. Inicializar la conexión con el servidor
             await session.initialize()
             print("¡Conexión establecida con éxito!")
 
-            # 5. Listar las herramientas (tools) disponibles en el servidor
+            # Listar herramientas disponibles
             herramientas = await session.list_tools()
             print("\n--- Herramientas Disponibles ---")
             for tool in herramientas.tools:
                 print(f"- {tool.name}: {tool.description}")
 
-            # ── Prueba 1: listar_repos ────────────────────────────────────
-            print("\nEjecutando 'listar_repos'...")
-            r = await session.call_tool("listar_repos", arguments={})
-            print("\n--- Tus Repositorios ---")
+            # ── Prueba 1: listar directorio raíz ─────────────────────────
+            print("\n[1] Listando directorio raíz...")
+            r = await session.call_tool("listar_directorio", arguments={"ruta": "."})
             print(r.content[0].text)
 
-            # ── Prueba 2: info_repo ───────────────────────────────────────
-            print("\nEjecutando 'info_repo' sobre alvarixu/mcp_personal...")
-            r = await session.call_tool("info_repo", arguments={"nombre_repo": "alvarixu/mcp_personal"})
-            print("\n--- Info del Repo ---")
-            print(r.content[0].text)
-
-            # ── Prueba 3: listar_issues ───────────────────────────────────
-            print("\nEjecutando 'listar_issues' sobre alvarixu/mcp_personal...")
-            r = await session.call_tool("listar_issues", arguments={"nombre_repo": "alvarixu/mcp_personal", "estado": "all"})
-            print("\n--- Issues ---")
-            print(r.content[0].text)
-
-            # ── Prueba 4: crear_issue ─────────────────────────────────────
-            print("\nEjecutando 'crear_issue' sobre alvarixu/TFG...")
-            r = await session.call_tool("crear_issue", arguments={
-                "nombre_repo": "alvarixu/TFG",
-                "titulo": "Issue de prueba creado via MCP",
-                "cuerpo": "Este issue fue creado automaticamente por el servidor MCP local."
+            # ── Prueba 2: crear un archivo ────────────────────────────────
+            print("\n[2] Creando archivo de prueba...")
+            r = await session.call_tool("escribir_archivo", arguments={
+                "ruta": "prueba/hola.txt",
+                "contenido": "Hola desde el servidor MCP!\nEste archivo fue creado automaticamente."
             })
-            print("\n--- Issue Creado ---")
             print(r.content[0].text)
+
+            # ── Prueba 3: leer el archivo creado ──────────────────────────
+            print("\n[3] Leyendo archivo creado...")
+            r = await session.call_tool("leer_archivo", arguments={"ruta": "prueba/hola.txt"})
+            print(r.content[0].text)
+
+            # ── Prueba 4: info del archivo ────────────────────────────────
+            print("\n[4] Info del archivo...")
+            r = await session.call_tool("info_archivo", arguments={"ruta": "prueba/hola.txt"})
+            print(r.content[0].text)
+
+            # ── Prueba 5: listar subdirectorio creado ─────────────────────
+            print("\n[5] Listando carpeta 'prueba'...")
+            r = await session.call_tool("listar_directorio", arguments={"ruta": "prueba"})
+            print(r.content[0].text)
+
+            # ── Prueba 6: eliminar archivo ────────────────────────────────
+            print("\n[6] Eliminando archivo de prueba...")
+            r = await session.call_tool("eliminar_archivo", arguments={"ruta": "prueba/hola.txt"})
+            print(r.content[0].text)
+
+            print("\nTodas las pruebas completadas.")
 
 if __name__ == "__main__":
-    # Ejecutar el bucle de eventos asíncrono de Python
     try:
         asyncio.run(iniciar_cliente())
     except KeyboardInterrupt:
