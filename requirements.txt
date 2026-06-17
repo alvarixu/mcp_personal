@@ -1,1 +1,3 @@
-mcp
+mcp[sse]
+starlette
+uvicorn
